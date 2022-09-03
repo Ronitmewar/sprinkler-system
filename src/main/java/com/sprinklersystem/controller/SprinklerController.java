@@ -4,8 +4,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.time.LocalTime;
 import java.util.Properties;
@@ -26,14 +24,15 @@ import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
 import com.sprinklersystem.SprinklerSystemApplication;
-import com.sprinklersystem.service.SprinklerService;
+import com.sprinklersystem.service.SprinklerRestartAppService;
+import com.sprinklersystem.util.Utility;
 
 @RestController
 @RequestMapping("/sprinkler")
 public class SprinklerController {
 
 	@Autowired
-	private SprinklerService sprinklerService;
+	private SprinklerRestartAppService sprinklerService;
 
 	private static final Logger LOG = LoggerFactory.getLogger(SprinklerController.class);
 
@@ -66,7 +65,7 @@ public class SprinklerController {
 			return MOTOR_STARTED_MSG;
 		} catch (Exception e) {
 			e.printStackTrace();
-			return convertStacktraceToString(e);
+			return Utility.convertStacktraceToString(e);
 		}
 
 	}
@@ -79,7 +78,7 @@ public class SprinklerController {
 			return MOTOR_STOPPED_MSG;
 		} catch (Exception e) {
 			e.printStackTrace();
-			return convertStacktraceToString(e);
+			return Utility.convertStacktraceToString(e);
 		}
 	}
 
@@ -98,7 +97,7 @@ public class SprinklerController {
 			return String.format("Water motor ran for %s seconds!!", time);
 		} catch (Exception e) {
 			e.printStackTrace();
-			return convertStacktraceToString(e);
+			return Utility.convertStacktraceToString(e);
 		}
 
 	}
@@ -106,14 +105,18 @@ public class SprinklerController {
 	@GetMapping("/scheduler/setTime/{hour}/{minute}")
 	public String setScheduler(@PathVariable String hour, @PathVariable String minute) {
 		try {
+			validate(hour, minute);
 			String cronExp = String.format("0 %s %s * * ?", minute, hour);
 			updateSchedulerTime(cronExp);
-			LOG.info("Scheduler is set for {}:{} everyday", hour, minute);
+			LOG.info("Scheduler is set for {}:{} everyday", new DecimalFormat("00").format(Integer.parseInt(hour)),
+					new DecimalFormat("00").format(Integer.parseInt(minute)));
 			sprinklerService.asyncApplicationRestart();
-			return String.format("Scheduler is set for %s:%s everyday", hour, minute);
+			return String.format("Scheduler is set for %s:%s everyday",
+					new DecimalFormat("00").format(Integer.parseInt(hour)),
+					new DecimalFormat("00").format(Integer.parseInt(minute)));
 		} catch (Exception e) {
 			e.printStackTrace();
-			return convertStacktraceToString(e);
+			return Utility.convertStacktraceToString(e);
 		}
 
 	}
@@ -129,16 +132,22 @@ public class SprinklerController {
 			return String.format("Scheduler time is %s:%s %s everyday", hour, minute, timeMeridiem);
 		} catch (Exception e) {
 			e.printStackTrace();
-			return convertStacktraceToString(e);
+			return Utility.convertStacktraceToString(e);
 		}
 
 	}
 
-	private String convertStacktraceToString(Exception e) {
-		StringWriter sw = new StringWriter();
-		PrintWriter pw = new PrintWriter(sw);
-		e.printStackTrace(pw);
-		return sw.toString();
+	private void validate(String hour, String minute) throws Exception {
+		try {
+			int hourValue = Integer.parseInt(hour);
+			int minuteValue = Integer.parseInt(minute);
+			if (hourValue < 0 || hourValue > 23 || minuteValue < 0 || minuteValue > 59) {
+				throw new Exception("Invalid values ; Allowed values : For hour 0-23 , For minute 0-59");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
 	}
 
 	private void updateSchedulerTime(String cronExp) throws Exception {
@@ -174,5 +183,4 @@ public class SprinklerController {
 		}
 
 	}
-
 }

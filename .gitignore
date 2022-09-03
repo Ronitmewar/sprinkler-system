@@ -4,6 +4,7 @@ target/
 .mvn/
 mvnw
 mvnw.cmd
+application.properties
 !**/src/main/**/target/
 !**/src/test/**/target/
 
@@ -15,6 +16,7 @@ mvnw.cmd
 .settings
 .springBeans
 .sts4-cache
+
 
 ### IntelliJ IDEA ###
 .idea

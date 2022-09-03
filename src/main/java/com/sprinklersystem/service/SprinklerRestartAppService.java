@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 import com.sprinklersystem.SprinklerSystemApplication;
 
 @Service
-public class SprinklerService {
+public class SprinklerRestartAppService {
 
-	private static Logger log = LoggerFactory.getLogger(SprinklerService.class);
+	private static Logger log = LoggerFactory.getLogger(SprinklerRestartAppService.class);
 
 	@Async
 	public void asyncApplicationRestart() {
